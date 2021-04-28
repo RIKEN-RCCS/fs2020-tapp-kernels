@@ -1,0 +1,5 @@
+!ocl prefetch_read(rhovy(iijj    ,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovy(iijj+64 ,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovy(iijj+128,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovy(iijj+192,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovy(iijj+256,k,l),level=1,strong=1)

@@ -1,0 +1,13 @@
+      integer*4 :: NP, NP_ORG, NV, NZ
+      parameter(NP=265225)
+      parameter(NP_ORG=1092727)
+      parameter(NV=8)
+      parameter(NZ=30)
+#ifdef CLEAN_CACHE
+      integer(kind=4) :: NITR
+      parameter(NITR = 100)
+#else
+      integer(kind=4) :: NITR
+      parameter(NITR = 1)
+#endif
+

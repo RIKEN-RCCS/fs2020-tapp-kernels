@@ -1,0 +1,5 @@
+!ocl prefetch_read(rhovz(iijj+block_size    ,k,l),level=2,strong=1)
+!ocl prefetch_read(rhovz(iijj+block_size+64 ,k,l),level=2,strong=1)
+!ocl prefetch_read(rhovz(iijj+block_size+128,k,l),level=2,strong=1)
+!ocl prefetch_read(rhovz(iijj+block_size+192,k,l),level=2,strong=1)
+!ocl prefetch_read(rhovz(iijj+block_size+256,k,l),level=2,strong=1)

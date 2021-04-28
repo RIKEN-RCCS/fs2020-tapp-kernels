@@ -1,0 +1,5 @@
+!ocl prefetch_read(rhovx(iijj    ,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovx(iijj+64 ,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovx(iijj+128,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovx(iijj+192,k,l),level=1,strong=1)
+!ocl prefetch_read(rhovx(iijj+256,k,l),level=1,strong=1)
