@@ -1,285 +1,169 @@
+module gparameter
+  implicit none
+  private
+
+  integer,  public, parameter :: dp = selected_real_kind(15, 307)
+  integer,  public, parameter :: sp = selected_real_kind(6, 37)
+  integer,  public, parameter :: wp = sp
+  real(wp), public, parameter :: expected_result(1:3)=[-108.248734,282.639008,-239.026306]
+
+  type,public  :: s_genesis_kernel_param
+
+  integer                     :: maxcell_near
+  integer                     :: maxcell
+  integer                     :: ncell
+  integer                     :: ncell_local
+  integer                     :: num_atom_cls
+  integer                     :: MaxAtom
+  integer                     :: nthread
+  integer                     :: ntable
+  real(wp)                    :: density
+  real(wp)                    :: cutoff
+  integer, allocatable        :: natom(:)
+  integer, allocatable        :: atmcls(:,:)
+  integer, allocatable        :: cell_pairlist1(:,:)
+  integer, allocatable        :: virial_check(:,:)
+  integer, allocatable        :: nb15_cell(:)
+  integer, allocatable        :: nb15_list(:,:)
+  integer(1), allocatable     :: exclusion_mask1(:,:,:)
+  integer(1), allocatable     :: exclusion_mask(:,:,:)
+  real(wp) , allocatable      :: system_size(:)
+  real(wp) , allocatable      :: cell_move(:,:,:)
+  real(wp) , allocatable      :: charge(:,:)
+  real(wp) , allocatable      :: coord(:,:,:)
+  real(wp) , allocatable      :: coord_pbc(:,:,:)
+  real(wp) , allocatable      :: trans1(:,:,:)
+  real(wp) , allocatable      :: table_grad(:)
+  real(wp) , allocatable      :: force(:,:,:,:)
+  real(wp) , allocatable      :: virial(:,:)
+  real(wp) , allocatable      :: nonb_lj12(:,:)
+  real(wp) , allocatable      :: nonb_lj6(:,:)
+
+  end type s_genesis_kernel_param
+
+end module gparameter
+
 module module_pointers
+use gparameter
 contains
 
-subroutine set_pointer(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,  &
-                         p12,p13,p14,p15,p16,p17,p18,p19,p20,p21)
+subroutine read_data_file (gparam)
 
-    real(4), pointer :: p6(:,:,:,:), p11(:,:,:)
-    real(4), pointer :: p10(:,:,:,:), p7(:,:,:,:)
-    real(4), pointer :: p8(:,:,:,:,:), p9(:,:,:)
-    real(4), pointer :: p12(:,:,:,:), p13(:)
-    real(4), pointer :: p18(:,:,:), p19(:,:,:)
-    real(4), pointer :: p16,p17
-    real(4), pointer :: p15(:)
-    integer, pointer :: p14(:,:,:)
-    integer,  pointer :: p1(:,:,:), p4(:,:,:)
-    integer,  pointer :: p5(:,:), p2(:,:), p3(:,:,:)
-    integer(1),  pointer :: p20(:,:,:,:), p21(:,:,:,:)
+  type(s_genesis_kernel_param), intent(inout) :: gparam
 
-    integer , target :: c_cell_pairlist(1:2,1:4683,1:4)
-    integer , target :: c_nb15_cell(1:4683,1:4)
-    integer , target :: c_nb15_list(1:2*100,1:4683,1:4)
-    integer , target :: c_atmcls(1:100,1:256,1:4)
-    integer , target :: c_natom(1:256,1:4)
-    real(4), target :: c_coord(1:3,1:100,1:256,1:4)
-    real(4), target :: c_coord_pbc(1:100,1:3,1:256,1:4)
-    real(4), target :: c_force(1:100,1:3,1:256,1:3,1:4)
-    real(4), target :: c_virial(1:4683,1:3,1:4)
-    real(4), target :: c_trans1(1:3,1:100,1:256,1:4)
-    real(4), target :: c_charge(1:100,1:256,1:4)
-    real(4), target :: c_cell_move(1:3,1:256,1:256,1:4)
-    real(4), target :: c_system_size(1:3)
-    integer, target :: c_virial_check(1:256,1:256,1:4)
-    real(4), target :: c_table_grad(1:9432)
-    real(4), target :: c_density
-    real(4), target :: c_cutoff
-    real(4), target :: c_nonb_lj12(1:50,1:50,1:4)
-    real(4), target :: c_nonb_lj6(1:50,1:50,1:4)
-    integer(1), target :: c_exclusion_mask1(1:262,1:100,1:9,1:4)
-    integer(1), target :: c_exclusion_mask(1:262,1:100,1:105,1:4)
+  character*20 :: filename
+  integer                     :: omp_get_num_threads
+  integer                     :: maxcell_near
+  integer                     :: maxcell
+  integer                     :: ncell
+  integer                     :: ncell_local
+  integer                     :: num_atom_cls
+  integer                     :: MaxAtom
+  integer                     :: nthread
+  integer                     :: ntable
+  real(wp)                    :: density
+  real(wp)                    :: cutoff
+  integer   :: alloc_stat
+  integer :: iunit, is_ok
 
-    common /cb_cell_pairlist/ c_cell_pairlist
-    common /cb_nb15_cell/ c_nb15_cell
-    common /cb_nb15_list/ c_nb15_list
-    common /cb_atmcls/ c_atmcls
-    common /cb_natom/ c_natom
-    common /cb_coord/ c_coord
-    common /cb_coord_pbc/ c_coord_pbc
-    common /cb_force/ c_force
-    common /cb_virial/ c_virial
-    common /cb_trans1/ c_trans1
-    common /cb_charge/ c_charge
-    common /cb_cell_move/ c_cell_move
-    common /cb_system_size/ c_system_size
-    common /cb_virial_check/ c_virial_check
-    common /cb_table_grad/ c_table_grad
-    common /cb_density/ c_density
-    common /cb_cutoff/ c_cutoff
-    common /cb_nonb_lj12/ c_nonb_lj12
-    common /cb_nonb_lj6/ c_nonb_lj6
-    common /cb_exclusion_mask1/ c_exclusion_mask1
-    common /cb_exclusion_mask/ c_exclusion_mask
+  !$omp parallel 
+  gparam%nthread = omp_get_num_threads()
+  !$omp end parallel
 
-    p1 => c_cell_pairlist
-    p2 => c_nb15_cell
-    p3 => c_nb15_list
-    p4 => c_atmcls
-    p5 => c_natom
-    p6 => c_coord
-    p7 => c_coord_pbc
-    p8 => c_force
-    p9 => c_virial
-    p10=> c_trans1
-    p11=> c_charge
-    p12=> c_cell_move
-    p13=> c_system_size
-    p14=> c_virial_check
-    p15=> c_table_grad
-    p16=> c_density
-    p17=> c_cutoff
-    p18=> c_nonb_lj12
-    p19=> c_nonb_lj6
-    p20=> c_exclusion_mask1
-    p21=> c_exclusion_mask
+  iunit=77
+  write(filename,'(a)') "data_kernel_July"
 
-end subroutine
+  open(iunit, file=filename, form="formatted", status="unknown", iostat=is_ok)
+  if (is_ok.ne.0) then
+  write(*,'(a,a)') "*** Error. failed to open file: ", filename
+  endif
 
+  call sub_i4_data_read(iunit, gparam%maxcell, 1 )
+  call sub_i4_data_read(iunit, gparam%maxcell_near, 1 )
+  call sub_i4_data_read(iunit, gparam%ncell, 1 )
+  call sub_i4_data_read(iunit, gparam%ncell_local, 1 )
+  call sub_i4_data_read(iunit, gparam%num_atom_cls, 1 )
+  call sub_i4_data_read(iunit, gparam%MaxAtom, 1 )
+  call sub_i4_data_read(iunit, gparam%ntable, 1 )
 
+  maxcell      = gparam%maxcell
+  maxcell_near = gparam%maxcell_near
+  ncell        = gparam%ncell
+  ncell_local  = gparam%ncell_local
+  num_atom_cls = gparam%num_atom_cls
+  MaxAtom      = gparam%MaxAtom
+  nthread      = gparam%nthread
+  ntable       = gparam%ntable
 
-subroutine write_data_file ()
+  allocate(gparam%charge(1:MaxAtom,1:ncell),                    &
+           gparam%atmcls(1:MaxAtom,1:ncell),                    &
+           gparam%nonb_lj12(1:num_atom_cls, 1:num_atom_cls),    &
+           gparam%nonb_lj6(1:num_atom_cls, 1:num_atom_cls),     &
+           gparam%coord(1:3,1:MaxAtom,1:ncell),                 &
+           gparam%coord_pbc(1:MaxAtom,1:3,1:ncell),             &
+           gparam%trans1(1:3,1:MaxAtom,1:ncell),                &
+           gparam%table_grad(1:ntable*6),                       &
+           gparam%force(1:MaxAtom,1:3,1:ncell,1:nthread),       &
+           gparam%virial(1:3,1:maxcell),                        &
+           gparam%natom(1:ncell),                               &
+           gparam%cell_pairlist1(1:2,1:maxcell),                &
+           gparam%nb15_cell(1:maxcell),                         &
+           gparam%nb15_list(1:2*MaxAtom,1:maxcell),             &
+           gparam%exclusion_mask1(1:MaxAtom,1:MaxAtom,1:ncell_local), &
+           gparam%exclusion_mask(1:MaxAtom,1:MaxAtom,1:maxcell_near), &
+           gparam%virial_check(1:ncell,1:ncell),                &
+           gparam%cell_move(1:3,1:ncell,1:ncell),               &
+           gparam%system_size(1:3),                             &
+           stat = alloc_stat)
 
-    integer , target :: c_cell_pairlist(1:2,1:4683,1:4)
-    integer , target :: c_nb15_cell(1:4683,1:4)
-    integer , target :: c_nb15_list(1:2*100,1:4683,1:4)
-    integer , target :: c_atmcls(1:100,1:256,1:4)
-    integer , target :: c_natom(1:256,1:4)
-    real(4), target :: c_coord(1:3,1:100,1:256,1:4)
-    real(4), target :: c_coord_pbc(1:100,1:3,1:256,1:4)
-    real(4), target :: c_force(1:100,1:3,1:256,1:3,1:4)
-    real(4), target :: c_virial(1:4683,1:3,1:4)
-    real(4), target :: c_trans1(1:3,1:100,1:256,1:4)
-    real(4), target :: c_charge(1:100,1:256,1:4)
-    real(4), target :: c_cell_move(1:3,1:256,1:256,1:4)
-    real(4), target :: c_system_size(1:3)
-    integer, target :: c_virial_check(1:256,1:256,1:4)
-    real(4), target :: c_table_grad(1:9432)
-    real(4), target :: c_density
-    real(4), target :: c_cutoff
-    real(4), target :: c_nonb_lj12(1:50,1:50,1:4)
-    real(4), target :: c_nonb_lj6(1:50,1:50,1:4)
-    integer(1), target :: c_exclusion_mask1(1:262,1:100,1:9,1:4)
-    integer(1), target :: c_exclusion_mask(1:262,1:100,1:105,1:4)
-
-    common /cb_cell_pairlist/ c_cell_pairlist
-    common /cb_nb15_cell/ c_nb15_cell
-    common /cb_nb15_list/ c_nb15_list
-    common /cb_atmcls/ c_atmcls
-    common /cb_natom/ c_natom
-    common /cb_coord/ c_coord
-    common /cb_coord_pbc/ c_coord_pbc
-    common /cb_force/ c_force
-    common /cb_virial/ c_virial
-    common /cb_trans1/ c_trans1
-    common /cb_charge/ c_charge
-    common /cb_cell_move/ c_cell_move
-    common /cb_system_size/ c_system_size
-    common /cb_virial_check/ c_virial_check
-    common /cb_table_grad/ c_table_grad
-    common /cb_density/ c_density
-    common /cb_cutoff/ c_cutoff
-    common /cb_nonb_lj12/ c_nonb_lj12
-    common /cb_nonb_lj6/ c_nonb_lj6
-    common /cb_exclusion_mask1/ c_exclusion_mask1
-    common /cb_exclusion_mask/ c_exclusion_mask
-
-	character*20 :: filename
-	integer :: iunit, is_ok
-	iunit=77
-	write(filename,'(a)') "data_kernel_July"
-	
-	open(iunit, file=filename, form="formatted", status="unknown", iostat=is_ok)
-	if (is_ok.ne.0) then
-	write(*,'(a,a)') "*** Error. failed to open file: ", filename
-	endif
-!cx
-	call sub_i4_data_write(iunit, c_cell_pairlist, (2*4683*4) )
-	call sub_i4_data_write(iunit, c_nb15_cell, (4683*4) )
-	call sub_i4_data_write(iunit, c_nb15_list, (2*100*4683*4) )
-	call sub_i4_data_write(iunit, c_atmcls, (100*256*4) )
-	call sub_i4_data_write(iunit, c_natom, (256*4) )
-	call sub_i4_data_write(iunit, c_virial_check, (256*256*4) )
-	call sub_r4_data_write(iunit, c_coord, (3*100*256*4) )
-	!cx call sub_r4_data_write(iunit, c_coord_pbc, (100*3*256*4) )
-	!cx call sub_r4_data_write(iunit, c_force, (100*3*256*3*4) )
-	!cx call sub_r4_data_write(iunit, c_virial, (4683*3*4) )
-	call sub_r4_data_write(iunit, c_trans1, (3*100*256*4) )
-	call sub_r4_data_write(iunit, c_charge, (100*256*4) )
-	call sub_r4_data_write(iunit, c_cell_move, (3*256*256*4) )
-	call sub_r4_data_write(iunit, c_system_size, (3) )
-	call sub_r4_data_write(iunit, c_table_grad, (9432) )
-	call sub_r4_data_write(iunit, c_density, 1)
-	call sub_r4_data_write(iunit, c_cutoff, 1)
-	call sub_r4_data_write(iunit, c_nonb_lj12, (50*50*4) )
-	call sub_r4_data_write(iunit, c_nonb_lj6, (50*50*4) )
-	call sub_i1_data_write(iunit, c_exclusion_mask1, (262*100*9*4) )
-	call sub_i1_data_write(iunit, c_exclusion_mask, (262*100*105*4) )
-	!cx
-	close(iunit)
+  call sub_i4_data_read(iunit, gparam%natom, (ncell) )
+  call sub_i4_data_read(iunit, gparam%cell_pairlist1, (2*maxcell) )
+  call sub_i4_data_read(iunit, gparam%nb15_cell, (maxcell) )
+  call sub_i4_data_read(iunit, gparam%nb15_list, (2*MaxAtom*maxcell) )
+  call sub_i1_data_read(iunit, gparam%exclusion_mask1, (MaxAtom*MaxAtom*ncell_local) )
+  call sub_i1_data_read(iunit, gparam%exclusion_mask, (MaxAtom*MaxAtom*maxcell_near) )
+  call sub_i4_data_read(iunit, gparam%atmcls, (MaxAtom*ncell) )
+  call sub_r4_data_read(iunit, gparam%nonb_lj12, (num_atom_cls*num_atom_cls) )
+  call sub_r4_data_read(iunit, gparam%nonb_lj6, (num_atom_cls*num_atom_cls) )
+  call sub_i4_data_read(iunit, gparam%virial_check, (ncell*ncell) )
+  call sub_r4_data_read(iunit, gparam%coord, (3*MaxAtom*ncell) )
+  call sub_r4_data_read(iunit, gparam%trans1, (3*MaxAtom*ncell) )
+  call sub_r4_data_read(iunit, gparam%charge, (MaxAtom*ncell) )
+  call sub_r4_data_read(iunit, gparam%cell_move, (3*ncell*ncell) )
+  call sub_r4_data_read(iunit, gparam%system_size, (3) )
+  call sub_r4_data_read(iunit, gparam%table_grad, (ntable*6) )
+  call sub_r4_data_read(iunit, gparam%density, 1)
+  call sub_r4_data_read(iunit, gparam%cutoff, 1)
+close(iunit)
 
 end subroutine
 
+subroutine check_validation (MaxAtom, ncell, nthread, force)
+    use gparameter
 
+    real(wp) :: force(1:MaxAtom,1:3,1:ncell,1:nthread)
+    real(wp) :: val, check_result
 
-subroutine read_data_file ()
+    do i=1,3
+      val=0.0_wp
+      do l=1,nthread
+        do k=1,ncell
+          do j=1,MaxAtom, 5 ! since sum of all forces should zero. 5 is required.
+            val=val+force(j,i,k,l)
+          enddo
+        enddo
+      enddo
 
-    integer , target :: c_cell_pairlist(1:2,1:4683,1:4)
-    integer , target :: c_nb15_cell(1:4683,1:4)
-    integer , target :: c_nb15_list(1:2*100,1:4683,1:4)
-    integer , target :: c_atmcls(1:100,1:256,1:4)
-    integer , target :: c_natom(1:256,1:4)
-    real(4), target :: c_coord(1:3,1:100,1:256,1:4)
-    real(4), target :: c_coord_pbc(1:100,1:3,1:256,1:4)
-    real(4), target :: c_force(1:100,1:3,1:256,1:3,1:4)
-    real(4), target :: c_virial(1:4683,1:3,1:4)
-    real(4), target :: c_trans1(1:3,1:100,1:256,1:4)
-    real(4), target :: c_charge(1:100,1:256,1:4)
-    real(4), target :: c_cell_move(1:3,1:256,1:256,1:4)
-    real(4), target :: c_system_size(1:3)
-    integer, target :: c_virial_check(1:256,1:256,1:4)
-    real(4), target :: c_table_grad(1:9432)
-    real(4), target :: c_density
-    real(4), target :: c_cutoff
-    real(4), target :: c_nonb_lj12(1:50,1:50,1:4)
-    real(4), target :: c_nonb_lj6(1:50,1:50,1:4)
-    integer(1), target :: c_exclusion_mask1(1:262,1:100,1:9,1:4)
-    integer(1), target :: c_exclusion_mask(1:262,1:100,1:105,1:4)
+      check_result = val / expected_result(i)
 
-    common /cb_cell_pairlist/ c_cell_pairlist
-    common /cb_nb15_cell/ c_nb15_cell
-    common /cb_nb15_list/ c_nb15_list
-    common /cb_atmcls/ c_atmcls
-    common /cb_natom/ c_natom
-    common /cb_coord/ c_coord
-    common /cb_coord_pbc/ c_coord_pbc
-    common /cb_force/ c_force
-    common /cb_virial/ c_virial
-    common /cb_trans1/ c_trans1
-    common /cb_charge/ c_charge
-    common /cb_cell_move/ c_cell_move
-    common /cb_system_size/ c_system_size
-    common /cb_virial_check/ c_virial_check
-    common /cb_table_grad/ c_table_grad
-    common /cb_density/ c_density
-    common /cb_cutoff/ c_cutoff
-    common /cb_nonb_lj12/ c_nonb_lj12
-    common /cb_nonb_lj6/ c_nonb_lj6
-    common /cb_exclusion_mask1/ c_exclusion_mask1
-    common /cb_exclusion_mask/ c_exclusion_mask
-
-	character*20 :: filename
-	integer :: iunit, is_ok
-	iunit=77
-	write(filename,'(a)') "data_kernel_July"
-	
-	open(iunit, file=filename, form="formatted", status="unknown", iostat=is_ok)
-	if (is_ok.ne.0) then
-	write(*,'(a,a)') "*** Error. failed to open file: ", filename
-	endif
-!cx
-	call sub_i4_data_read(iunit, c_cell_pairlist, (2*4683*4) )
-	call sub_i4_data_read(iunit, c_nb15_cell, (4683*4) )
-	call sub_i4_data_read(iunit, c_nb15_list, (2*100*4683*4) )
-	call sub_i4_data_read(iunit, c_atmcls, (100*256*4) )
-	call sub_i4_data_read(iunit, c_natom, (256*4) )
-	call sub_i4_data_read(iunit, c_virial_check, (256*256*4) )
-	call sub_r4_data_read(iunit, c_coord, (3*100*256*4) )
-	!cx call sub_r4_data_read(iunit, c_coord_pbc, (100*3*256*4) )
-	!cx call sub_r4_data_read(iunit, c_force, (100*3*256*3*4) )
-	!cx call sub_r4_data_read(iunit, c_virial, (4683*3*4) )
-	call sub_r4_data_read(iunit, c_trans1, (3*100*256*4) )
-	call sub_r4_data_read(iunit, c_charge, (100*256*4) )
-	call sub_r4_data_read(iunit, c_cell_move, (3*256*256*4) )
-	call sub_r4_data_read(iunit, c_system_size, (3) )
-	call sub_r4_data_read(iunit, c_table_grad, (9432) )
-	call sub_r4_data_read(iunit, c_density, 1)
-	call sub_r4_data_read(iunit, c_cutoff, 1)
-	call sub_r4_data_read(iunit, c_nonb_lj12, (50*50*4) )
-	call sub_r4_data_read(iunit, c_nonb_lj6, (50*50*4) )
-	call sub_i1_data_read(iunit, c_exclusion_mask1, (262*100*9*4) )
-	call sub_i1_data_read(iunit, c_exclusion_mask, (262*100*105*4) )
-	!cx
-	close(iunit)
-
-end subroutine
-
-
-subroutine check_force_validation ()
-
-    real(4), target :: c_force(1:100,1:3,1:256,1:3,1:4)
-    common /cb_force/ c_force
-    real(8) :: val, expected_result, check_result
-
-    val=0.0d0
-    do k = 1,256
-      do j = 1,3
-        do i = 1,100
-          val=val+dble(c_force(i,j,k,1,1))
-        end do
-      end do
-    end do
-
-    !cx call report_validation(val,-1.463005746203442d+01,1d-1)
-
-    expected_result = -1.463005746203442d+01
-    check_result = val / expected_result
-
-    if ( 0.999 < check_result .and. check_result < 1.001 ) then
-        write(*,*) "val=", val, "    expected_result=", expected_result
-        write(*,*) "the computed result seems to be OK."
-    else
-        write(*,*) "val=", val, "    expected_result=", expected_result
-        write(*,*) "the computed result is not close enough to the expected value."
-    endif
+      if ( 0.999 < check_result .and. check_result < 1.001 ) then
+          write(*,*) "val=", val, "    expected_result=", expected_result(i)
+          write(*,*) "the computed result seems to be OK."
+      else
+          write(*,*) "val=", val, "    expected_result=", expected_result(i)
+          write(*,*) "the computed result is not close enough to the expected value."
+      endif
+    enddo
 
 end subroutine
 
