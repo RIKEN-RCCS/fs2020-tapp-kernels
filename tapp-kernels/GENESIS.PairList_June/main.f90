@@ -1,4 +1,4 @@
-#include "profiler.h"
+!#include "profiler.h"
 
 program nonbond_kernel
     use gparameter
@@ -7,22 +7,20 @@ program nonbond_kernel
     integer  :: step
     type(s_genesis_kernel_param):: gparam
 
-    call read_data_file()
-    !cx call check_data_file()
+    call read_data_file(gparam)
 
-    call readset_parameters(gparam)
+!    PROF_INIT
+!    PROF_START_ALL
 
-    PROF_INIT
-    PROF_START_ALL
-
-    do step = 1, 1000
-        call kernel(gparam)
+!    do step = 1, 1000
+    do step = 1, 1
+      call kernel(gparam)
     end do
 
-    PROF_STOP_ALL
-    PROF_FINALIZE
+!    PROF_STOP_ALL
+!    PROF_FINALIZE
 
-    call result_validation()
+    call result_validation(gparam%MaxAtom, gparam%maxcell, gparam%num_nb15_calc)
 
 end program nonbond_kernel
 
