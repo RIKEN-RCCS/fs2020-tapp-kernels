@@ -94,32 +94,28 @@ In order to run the kernels in on single thread mode,
 some of the kernels need source code changes as explained below.
 
 ## 3. GENESIS Nonb15F June1
-###   1) insert after line 66.
-        nthread=1
+###   1) line 60 of initialize_data.f90
+        gparam%nthread = omp_get_num_threads() -> gparam%nthread=1
+###   2) line 75 of kernel_June_1.f90
+        id = omp_get_thread_num() -> id=0
 
 ## 4. GENESIS Nonb15F Dec-July
-###   1) line 60, change the value of nthread to 1
-        nthread=1
+###   1) line 70 of initialize_data.f90
+        gparam%nthread = omp_get_num_threads() -> gparam%nthread=1
+###   2) line 85 of kernel_july.f90
+        id = omp_get_thread_num() -> id=0
 
 ## 5. GENESIS PairList June
-###   1) line 306, change the value of gparam%nthread to 1
-        gparam%nthread=1
-###   2) line 143, change the argument of mod as below.
-        id=mod(omp_get_thread_num(),nthread) → id=mod(0,3)
-###   3) line 144, change the value of ik as below.
-        ik=omp_get_thread_num()/nthread+1 → ik=0/3+1
-###   4) line 330,  change the argument of mod as below.
-        id=mod(omp_get_thread_num(),nthread) → id=mod(0,3)
-###   5) line 331,  change the value of ik as below.
-        ik=omp_get_thread_num()/nthread+1 → ik=0/3+1
+###   1) line 56 of initialize_data.f90
+        gparam%nthread = omp_get_num_threads() -> gparam%nthread=1
+###   2) line 64 of kernel_pairlist_June_1.f90
+        id = omp_get_thread_num() -> id=0
 
 ## 6. GENESIS PairList Dec-July
-###   1) line 52, change the value of nthread to 1
-        nthread=1
-###   2) line 65, change the argument of mod as below.
-        id=mod(omp_get_thread_num(),nthread) → id=mod(0,3)
-###   3) line 66, change the value of ik as below.
-        ik=omp_get_thread_num()/nthread+1 → ik=0/3+1
+###   1) line 59 of initialize_data.f90
+        gparam%nthread = omp_get_num_threads() -> gparam%nthread=1
+###   2) line 64 of kernel_pairlist_july.f90
+        id = omp_get_thread_num() -> id=0
 
 ## 12. NICAM Vertical_Adv_limiter
 ###   1) line 261, set num_threads as 1
