@@ -8,7 +8,7 @@ program nonbond_kernel
 
     call read_data_file(gparam)
 
-    do step = 1, 1
+    do step = 1, 1000
       call kernel(gparam)
     end do
 

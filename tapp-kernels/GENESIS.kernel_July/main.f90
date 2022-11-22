@@ -8,8 +8,8 @@ program nonbond_kernel
 
     call read_data_file(gparam)
 
-    do step = 1, 1
-    call kernel(gparam)
+    do step = 1, 1000
+      call kernel(gparam)
     end do
 
     call check_validation(gparam%MaxAtom,gparam%ncell,gparam%nthread,gparam%force)
